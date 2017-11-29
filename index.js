@@ -166,10 +166,36 @@ function gameOver(ship, enemies) {
         }
 
         return enemy.shots.some((shot) => {
-            return collisions(ship, shot);
+            if(collisions(ship, shot)) {
+                // Rx.Observable.interval(5000)
+                //     .do(gameOverMessage$
+                //         .subscribe(observer)
+                //         .unsubscribe());
+                return true;
+            }
         })
     })
 }
+
+function gameOverMessage() {
+    return 'game over from console';
+}
+
+function startFromBegin() {
+    return confirm("Start from begin?");
+}
+
+let observer = {
+    next: x => console.log(x),
+    error: err => console.log(err),
+    complete: () => console.log('complete')
+}
+
+let gameOverMessage$ = Rx.Observable.create((observer) => {
+    gameOverMessage();
+    observer.next(startFromBegin());
+    observer.complete();
+});
 
 let Game = Rx.Observable
             .combineLatest(
@@ -184,7 +210,7 @@ let Game = Rx.Observable
                 }
             )
             .sample(Rx.Observable.interval(20))
-            .takeWhile(actors => gameOver(actors.spaceship, actors.enemies) === false)
+            .takeWhile(actors => gameOver(actors.spaceship, actors.enemies) === false);
             
 Game.subscribe(renderScene);
 
