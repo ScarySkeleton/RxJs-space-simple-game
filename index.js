@@ -7,7 +7,6 @@ canvas.height = window.innerHeight;
 
 
 // Star
-
 let SPEED = 20;
 let STARNUMBER = 300;
 let StarStream = Rx.Observable.range(1, STARNUMBER)
@@ -60,26 +59,10 @@ let SpaceShip = mouseMove
                         y: HERO_Y
                     });
 
-function drawTriangle(x, y, width, color, direction) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x - width, y);
-    ctx.lineTo(x, direction === 'up' ? y - width : y + width);
-    ctx.lineTo(x + width, y);
-    ctx.lineTo(x - width, y);
-    ctx.fill();
-}
-
 function paintSpaceShip(x,y) {
     drawTriangle(x, y, 20, 'green', 'up');
 }
 
-function renderScene(actors) {
-    paintStar(actors.stars);
-    paintSpaceShip(actors.spaceship.x, actors.spaceship.y);
-    paintEnemies(actors.enemies);
-    paintHeroShots(actors.heroShots, actors.enemies);
-}
 
 const playerFiring = Rx.Observable
                         .merge(
@@ -89,7 +72,7 @@ const playerFiring = Rx.Observable
                                     return evt.keycode === 32;
                                 })
                         )
-                        .sample(Rx.Observable.interval(200));
+                        
 
 let HeroShots = Rx.Observable
                     .combineLatest(
@@ -175,30 +158,18 @@ function paintEnemies(enemies) {
     })
 }
 
-function isVisble(obj) {
-    return obj.x > -40 && obj.x < canvas.width + 40
-        && obj.y > -40 && obj.y < canvas.height + 40;
-}
-
-// Collisions
-function collisions(obj1, obj2) {
-    return (obj1.x > obj2.x - 20 && obj1.x < obj2.x + 20 
-            && obj1.y > obj2.y - 20 && obj1.y < obj2.y + 20);
-}
-
 // GAME
+function gameOver(ship, enemies) {
+    return enemies.some((enemy) => {
+        if(collisions(ship, enemy)) {
+            return true;
+        }
 
-// function gameOver(ship, enemies) {
-//     enemies.some((enemy) => {
-//         if(collisions(ship, enemy)) {
-//             return true;
-//         }
-
-//         return enemy.shots.some((shot) => {
-//             return collisions(ship, shot);
-//         })
-//     })
-// }
+        return enemy.shots.some((shot) => {
+            return collisions(ship, shot);
+        })
+    })
+}
 
 let Game = Rx.Observable
             .combineLatest(
@@ -213,6 +184,34 @@ let Game = Rx.Observable
                 }
             )
             .sample(Rx.Observable.interval(20))
-            //.takeWhile(actors => gameOver(actors.spaceship, actors.enemies));
+            .takeWhile(actors => gameOver(actors.spaceship, actors.enemies) === false)
             
 Game.subscribe(renderScene);
+
+function renderScene(actors) {
+    paintStar(actors.stars);
+    paintSpaceShip(actors.spaceship.x, actors.spaceship.y);
+    paintEnemies(actors.enemies);
+    paintHeroShots(actors.heroShots, actors.enemies);
+}
+
+function drawTriangle(x, y, width, color, direction) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - width, y);
+    ctx.lineTo(x, direction === 'up' ? y - width : y + width);
+    ctx.lineTo(x + width, y);
+    ctx.lineTo(x - width, y);
+    ctx.fill();
+}
+
+function isVisble(obj) {
+    return obj.x > -40 && obj.x < canvas.width + 40
+        && obj.y > -40 && obj.y < canvas.height + 40;
+}
+
+// Collisions
+function collisions(obj1, obj2) {
+    return (obj1.x > obj2.x - 20 && obj1.x < obj2.x + 20 
+            && obj1.y > obj2.y - 20 && obj1.y < obj2.y + 20);
+}
